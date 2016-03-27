@@ -6,3 +6,4 @@ def cli():
 
 import flynn_utils.commands.utils
 import flynn_utils.commands.push
+import flynn_utils.commands.env

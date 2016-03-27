@@ -67,3 +67,37 @@ def app_create(project_dir):
     call(['flynn', 'create', '-y', name])
 
     click.secho('Created {}'.format(name), fg='green')
+
+def dump_env(project_dir):
+    click.secho('Dumping env {}'.format(project_dir), fg='green')
+    flynn_dir = os.path.join(project_dir, '.flynn')
+    env_file = os.path.join(flynn_dir, 'env')
+    if not os.path.exists(flynn_dir):
+        os.makedirs(flynn_dir, mode=0o755)
+    p = Popen(['flynn', 'env'], cwd=project_dir, stdout=PIPE)
+    p.wait()
+    with open(env_file, 'w') as f:
+        for env_line in p.stdout.readlines():
+            if not env_line.startswith('SLUG_URL'):
+                f.write(env_line)
+
+def set_env(project_dir):
+    click.secho('Updating env from local information for {}'.format(project_dir), fg='green')
+    flynn_dir = os.path.join(project_dir, '.flynn')
+    env_file = os.path.join(flynn_dir, 'env')
+    if not os.path.exists(env_file):
+        click.secho('Env file not found, skipping', fg='yellow')
+        return False
+
+    with open(env_file, 'r') as f:
+        env_lines = f.readlines()
+
+    env_lines = map(lambda s: s.strip(), env_lines)
+    env_lines = filter(bool, env_lines)
+
+    if not env_lines:
+        click.secho('No env options found in file, skipping', fg='yellow')
+        return False
+
+    p = Popen(['flynn', 'env', 'set'] + env_lines, cwd=project_dir, stdout=PIPE)
+    p.wait()
